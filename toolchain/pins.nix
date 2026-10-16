@@ -58,7 +58,7 @@
   check-vendor-hash = "sha256-0KIMgA4ggflOXDR9zy3sZuOfKDlaVOjnOpopsGQq3LE="; # PREFETCH:check-vendor
   # bin/hello-world's own dependencies, for the offline check. Depends on the
   # example's manifests and Cargo.lock, so re-pin when its dependencies change.
-  example-vendor-hash = "sha256-Jnt5cGf3JaqSqo0fRu5kVyW9NgSKtEZPmEl8xvFp0Qg="; # PREFETCH:example-vendor
+  example-vendor-hash = "sha256-ui+YJMvMCnr4aJ8Onp8zxBYXMbB9t0Jb7trUN65TuoU="; # PREFETCH:example-vendor
 
   # Stage0 bootstrap: pinned by rust-mos' own src/stage0 at 8f3a80f8
   # (compiler_date=2025-02-18, compiler_version=beta => 1.85.0-beta).

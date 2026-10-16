@@ -26,6 +26,10 @@ other 6502-based targets.
 8. A Commodore 64 "Hello, 16-bit world, from Rust!" application will run and appear in an emulator.
 9. Happy programming!
 
+The dev shell supplies VICE (`x64sc`) and Xemu (`xmega65`) on both Linux and
+macOS; no Homebrew emulator installation is required. VICE uses the SDL2
+interface on macOS and the nixpkgs interface on Linux.
+
 ## Your projects: `bin/`
 
 Every binary project is its own crate under `bin/`, and the repo root is the workspace that holds

@@ -45,6 +45,13 @@
             # Built from source because neither nixpkgs nor Homebrew packages it
             # (both ship an unrelated Xbox emulator under the name `xemu`).
             xemu = call ./toolchain/xemu.nix { };
+            # nixpkgs' VICE recipe is Linux-only; macOS uses the same pinned
+            # source with an SDL2 build that needs no Homebrew packages.
+            vice =
+              if pkgs.stdenv.isDarwin then
+                call ./toolchain/vice-darwin.nix { inherit (pkgs.vice) src version; }
+              else
+                pkgs.vice;
             # The C65 ROM xmega65 boots, extracted from Cloanto's free C64
             # Forever installer. UNFREE — see the licensing header in the file;
             # in particular it must never be pushed to the public Cachix cache.
@@ -58,6 +65,7 @@
             mos-toolchain
             rust-mos
             xemu
+            vice
             mega65-rom
             ;
           default = toolchain.rust-mos;
@@ -173,24 +181,16 @@
             packages = [
               p.rust-mos
               p.mos-toolchain
-              # Xemu (xmega65) backs `cargo xrun_mega65`. Built from source by
-              # this flake on every platform — unlike VICE below, there is no
-              # distro/brew package to defer to (the `xemu` in nixpkgs and
-              # Homebrew is an unrelated Xbox emulator).
+              # Both emulators are supplied on Linux and macOS.
               p.xemu
+              p.vice
               cargo-xasm
               cargo-xrun
               cargo-xbuild
               cargo-xcheck
               cargo-xpublish-toolchain-binaries
               cargo-xprefetch-hashes
-            ]
-            # VICE (x64sc) backs `cargo run` for C64 crates (their
-            # .cargo/config.toml sets `runner = ["x64sc", "-autostart"]`).
-            # nixpkgs' `vice` is marked Linux-only (meta.platforms has no
-            # darwin), so there it is a `brew install vice` prerequisite (see
-            # README); on Linux the dev shell provides it.
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.vice ];
+            ];
 
             # Two entries: rust-mos ships mos-c64-none (plus a800xl/sim), while
             # mos-mega65-none is this repo's own JSON. rustc searches the list in
@@ -236,21 +236,6 @@
               # target ("custom targets are unstable"). An empty env var overrides any
               # such config and disables the wrapper for this shell.
               export CARGO_BUILD_RUSTC_WRAPPER="" CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER=""
-
-              # macOS: VICE (x64sc) backing `cargo run` is a brew-installed GTK app.
-              # It locates its compiled GSettings schemas via XDG_DATA_DIRS, but inside
-              # `nix develop` that is narrowed to store paths, so GTK aborts at startup
-              # with "No GSettings schemas are installed" (SIGTRAP) and `cargo run` dies.
-              # Add brew's share dir (Apple Silicon /opt/homebrew, Intel /usr/local) so
-              # the emulator can launch. No-op where brew is absent (e.g. Linux, where
-              # VICE comes from nixpkgs and its schemas are already wired up).
-              if command -v brew >/dev/null 2>&1; then
-                __brew_share="$(brew --prefix)/share"
-                if [ -e "$__brew_share/glib-2.0/schemas/gschemas.compiled" ]; then
-                  export XDG_DATA_DIRS="$__brew_share:''${XDG_DATA_DIRS:-}"
-                fi
-                unset __brew_share
-              fi
 
               if ! rustc --print target-list 2>/dev/null | grep -qx 'mos-unknown-none'; then
                 echo "WARNING: the rustc on PATH is NOT rust-mos (no mos-unknown-none target)." >&2
